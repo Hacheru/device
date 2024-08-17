@@ -1,31 +1,131 @@
-﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.9.34902.65
-MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsoleApplication1", "ConsoleApplication1\ConsoleApplication1.vcxproj", "{463500E9-E163-4713-BBF2-45EE1ABE6719}"
-EndProject
-Global
-	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Debug|x64.ActiveCfg = Debug|x64
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Debug|x64.Build.0 = Debug|x64
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Debug|x86.ActiveCfg = Debug|Win32
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Debug|x86.Build.0 = Debug|Win32
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Release|x64.ActiveCfg = Release|x64
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Release|x64.Build.0 = Release|x64
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Release|x86.ActiveCfg = Release|Win32
-		{463500E9-E163-4713-BBF2-45EE1ABE6719}.Release|x86.Build.0 = Release|Win32
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {7CB07E1B-F118-40AD-841C-4F3AFB8B5B6F}
-	EndGlobalSection
-EndGlobal
+#include <vector>
+#include <iostream>
+#include <cmath>
+
+const double PI = 3.14159265358979323846;
+
+class Shape {
+public:
+    Shape(double density, double volume, double surface)
+        : density_(density), volume_(volume), surface_(surface) {}
+
+    double getVolume() const { return volume_; }
+    double getSurface() const { return surface_; }
+    double getMass() const { return density_ * volume_; }
+
+private:
+    double density_;
+    double volume_;
+    double surface_;
+};
+
+class Cube : public Shape {
+public:
+    Cube(double side, double density)
+        : Shape(density, side* side* side, 6 * side * side) {}
+
+    double getSide() const { return std::cbrt(getVolume()); }
+};
+
+class Pyramid : public Shape {
+public:
+    Pyramid(double base, double height, double density)
+        : Shape(density, base* base* height / 3, base* base + 4 * base * std::sqrt(base * base / 4 + height * height)) {}
+
+    double getBase() const { return std::sqrt(getVolume() * 3 / getSurface() * 4); }
+    double getHeight() const { return getVolume() * 3 / (getBase() * getBase()); }
+};
+
+class Cylinder : public Shape {
+public:
+    Cylinder(double radius, double height, double density)
+        : Shape(density, PI* radius* radius* height, 2 * PI * radius * (radius + height)),
+        radius_(radius), height_(height) {}
+
+    double getRadius() const { return radius_; }
+    double getHeight() const { return height_; }
+
+private:
+    double radius_;
+    double height_;
+};
+
+class Device {
+public:
+    void addShape(const Shape& shape) {
+        shapes_.push_back(shape);
+    }
+
+    void addDevice(const Device& device) {
+        devices_.push_back(device);
+    }
+
+    double EvalVolume() const {
+        double total_volume = 0;
+        for (const auto& shape : shapes_) {
+            total_volume += shape.getVolume();
+        }
+        for (const auto& device : devices_) {
+            total_volume += device.EvalVolume();
+        }
+        return total_volume;
+    }
+
+    double EvalSurface() const {
+        double total_surface = 0;
+        for (const auto& shape : shapes_) {
+            total_surface += shape.getSurface();
+        }
+        for (const auto& device : devices_) {
+            total_surface += device.EvalSurface();
+        }
+        return total_surface;
+    }
+
+    double EvalMass() const {
+        double total_mass = 0;
+        for (const auto& shape : shapes_) {
+            total_mass += shape.getMass();
+        }
+        for (const auto& device : devices_) {
+            total_mass += device.EvalMass();
+        }
+        return total_mass;
+    }
+
+private:
+    std::vector<Shape> shapes_;
+    std::vector<Device> devices_;
+};
+
+int main() {
+    Cube cube1(5.0, 1.0);
+    Cube cube2(3.0, 2.0);
+
+    Pyramid pyramid1(4.0, 6.0, 3.0);
+    Pyramid pyramid2(5.0, 7.0, 4.0);
+
+    Cylinder cylinder1(2.0, 8.0, 5.0);
+    Cylinder cylinder2(3.0, 9.0, 6.0);
+
+    Device device1;
+    device1.addShape(cube1);
+    device1.addShape(cube2);
+    device1.addShape(pyramid1);
+    device1.addShape(cylinder1);
+
+    Device device2;
+    device2.addShape(pyramid2);
+    device2.addShape(cylinder2);
+    device2.addDevice(device1);
+
+    std::cout << "Device1 Volume: " << device1.EvalVolume() << std::endl;
+    std::cout << "Device1 Surface: " << device1.EvalSurface() << std::endl;
+    std::cout << "Device1 Mass: " << device1.EvalMass() << std::endl;
+
+    std::cout << "Device2 Volume: " << device2.EvalVolume() << std::endl;
+    std::cout << "Device2 Surface: " << device2.EvalSurface() << std::endl;
+    std::cout << "Device2 Mass: " << device2.EvalMass() << std::endl;
+
+    return 0;
+}
